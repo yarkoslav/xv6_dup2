@@ -66,6 +66,37 @@ sys_dup(void)
   return fd;
 }
 
+// implementation of our syscall
+int
+sys_dup2(void)
+{
+  struct file* old_file;
+  struct file* new_file;
+  int oldfd, newfd;
+
+  // get our current processor
+  struct proc *cuproc = myproc();
+
+  // get data for first file(old file)
+  int err = argfd(0, &oldfd, &old_file);
+  if (err < 0) {
+    // some error reading args or we are having old file incorrect
+    return -1;
+  }
+
+  // get data for second file(new file)
+  err = argfd(1, &newfd, &new_file);
+  if (err == 0) {
+    // if our fd points to the open file, we close it
+    fileclose(new_file);
+  }
+
+  filedup(old_file);
+  // set our value for the newfd the same as oldfd
+  cuproc->ofile[newfd] = cuproc->ofile[oldfd];
+  return 0;
+}
+
 int
 sys_read(void)
 {
